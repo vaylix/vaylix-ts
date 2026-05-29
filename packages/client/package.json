@@ -1,0 +1,33 @@
+{
+  "name": "@vaylix/client",
+  "version": "0.2.0",
+  "description": "Official TypeScript client for the Vaylix database.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:js && npm run build:types",
+    "build:js": "tsup --config tsup.config.ts",
+    "build:types": "tsc -p tsconfig.types.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@bokuweb/zstd-wasm": "^0.0.27",
+    "crc-32": "^1.2.2",
+    "dotenv": "17.4.2",
+    "uuid": "^14.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "vaylix-typescript-workspace",
+  "private": true,
+  "version": "0.2.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @vaylix/client && npm run build -w @vaylix/playground",
+    "check": "npm run check -w @vaylix/client && npm run check -w @vaylix/playground",
+    "test": "npm run test -w @vaylix/client && npm run test -w @vaylix/playground",
+    "version:check": "node ./scripts/version-check.mjs",
+    "playground": "npm run dev -w @vaylix/playground"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "semver": "^7.7.3",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6",
+    "typescript": "~6.0.2"
+  }
+}
