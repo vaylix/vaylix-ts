@@ -15,8 +15,10 @@ export type {
 export type { PoolConfig, VaylixPool } from './pool/types.js';
 export type {
   ErrorPayload,
+  HealthMap,
   InfoMap,
   MetricsMap,
+  ReplicationInfoMap,
   TransactionCommandResult,
   VaylixTransaction,
 } from './types/public.js';
@@ -25,7 +27,11 @@ export {
   AuthenticationError,
   AuthorizationError,
   ConnectionError,
+  FollowerWriteRejectedError,
   ProtocolError,
+  ReplicationAckTimeoutError,
+  ReplicationAckUnavailableError,
+  ReplicationPromotionDeniedError,
   RemoteCommandError,
   TimeoutError,
   VaylixError,

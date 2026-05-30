@@ -32,6 +32,11 @@ export const opcodes = {
   Backup: 0x1f,
   Restore: 0x20,
   MetricsProm: 0x31,
+  Health: 0x3a,
+  ShowReplication: 0x3b,
+  PromoteFollower: 0x3c,
+  PauseReplication: 0x3d,
+  ResumeReplication: 0x3e,
 } as const;
 
 export type OpcodeName = keyof typeof opcodes;

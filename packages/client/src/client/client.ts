@@ -3,7 +3,13 @@ import { encodeKey, encodeKeyU64, encodeKeys, encodeOptionalString, encodePairs,
 import { decodeBoolean, decodeCount, decodeEntries, decodeInteger, decodeString32, decodeStrings } from '../protocol/response.js';
 import type { ClientConfig } from '../config/types.js';
 import type { CommandOptions, SetOptions, SetResult, VaylixClient } from './types.js';
-import type { InfoMap, MetricsMap, VaylixTransaction } from '../types/public.js';
+import type {
+  HealthMap,
+  InfoMap,
+  MetricsMap,
+  ReplicationInfoMap,
+  VaylixTransaction,
+} from '../types/public.js';
 import { Connection } from '../net/connection.js';
 import { Transaction } from '../transaction/transaction.js';
 
@@ -123,6 +129,51 @@ export class ClientImpl implements VaylixClient {
       metadata: toMetadata(options),
     });
     return Object.fromEntries(decodeEntries(response.payload));
+  }
+
+  public async health(options?: CommandOptions): Promise<HealthMap> {
+    const response = await this.connection.request({
+      opcode: opcodes.Health,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return Object.fromEntries(decodeEntries(response.payload));
+  }
+
+  public async showReplication(options?: CommandOptions): Promise<ReplicationInfoMap> {
+    const response = await this.connection.request({
+      opcode: opcodes.ShowReplication,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return Object.fromEntries(decodeEntries(response.payload));
+  }
+
+  public async promoteFollower(options?: CommandOptions): Promise<'OK'> {
+    await this.connection.request({
+      opcode: opcodes.PromoteFollower,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return 'OK';
+  }
+
+  public async pauseReplication(options?: CommandOptions): Promise<'OK'> {
+    await this.connection.request({
+      opcode: opcodes.PauseReplication,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return 'OK';
+  }
+
+  public async resumeReplication(options?: CommandOptions): Promise<'OK'> {
+    await this.connection.request({
+      opcode: opcodes.ResumeReplication,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return 'OK';
   }
 
   public async metrics(options?: CommandOptions): Promise<MetricsMap> {

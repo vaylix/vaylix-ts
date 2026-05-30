@@ -4,6 +4,23 @@ All notable changes to this repository will be documented in this file.
 
 The format is based on Keep a Changelog and the versioning policy follows Semantic Versioning.
 
+## [0.2.0] - 2026-05-30
+
+### Added
+
+- added `0.4.0` server awareness to `@vaylix/client`
+- added `health()` and `showReplication()` inspection methods
+- added `promoteFollower()`, `pauseReplication()`, and `resumeReplication()` operational methods
+- added typed replication error classes for follower write rejection, acknowledgement failures, and promotion denial
+- added JSDoc across the public API surface for editor and generated type-hint documentation
+
+### Changed
+
+- bumped the default client version string to `0.2.0`
+- aligned live integration coverage with a Vaylix `0.4.0` server
+- corrected request timeout failures to throw `TimeoutError` instead of `ProtocolError`
+- normalized pool method signatures so optional command metadata remains available through the pool facade
+
 ## [0.1.2] - 2026-05-30
 
 ### Changed
