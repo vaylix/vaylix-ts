@@ -36,22 +36,27 @@ export class PoolImpl implements VaylixPool {
     return client;
   }
 
-  public async ping(): Promise<'PONG'> { return (await this.acquire()).ping(); }
-  public async get(key: string): Promise<string | null> { return (await this.acquire()).get(key); }
+  public async ping(...args: Parameters<VaylixClient['ping']>): Promise<'PONG'> { return (await this.acquire()).ping(...args); }
+  public async get(...args: Parameters<VaylixClient['get']>): Promise<string | null> { return (await this.acquire()).get(...args); }
   public async set(
     key: string,
     value: string,
     options?: Parameters<VaylixClient['set']>[2],
   ) { return (await this.acquire()).set(key, value, options); }
   public async del(...keys: string[]): Promise<number> { return (await this.acquire()).del(...keys); }
-  public async exists(key: string): Promise<boolean> { return (await this.acquire()).exists(key); }
-  public async mget(keys: string[]): Promise<Array<string | null>> { return (await this.acquire()).mget(keys); }
-  public async mset(entries: Record<string, string>): Promise<'OK'> { return (await this.acquire()).mset(entries); }
-  public async expire(key: string, seconds: number): Promise<boolean> { return (await this.acquire()).expire(key, seconds); }
-  public async ttl(key: string): Promise<number> { return (await this.acquire()).ttl(key); }
-  public async persist(key: string): Promise<boolean> { return (await this.acquire()).persist(key); }
-  public async info() { return (await this.acquire()).info(); }
-  public async metrics() { return (await this.acquire()).metrics(); }
-  public async metricsProm() { return (await this.acquire()).metricsProm(); }
+  public async exists(...args: Parameters<VaylixClient['exists']>): Promise<boolean> { return (await this.acquire()).exists(...args); }
+  public async mget(...args: Parameters<VaylixClient['mget']>): Promise<Array<string | null>> { return (await this.acquire()).mget(...args); }
+  public async mset(...args: Parameters<VaylixClient['mset']>): Promise<'OK'> { return (await this.acquire()).mset(...args); }
+  public async expire(...args: Parameters<VaylixClient['expire']>): Promise<boolean> { return (await this.acquire()).expire(...args); }
+  public async ttl(...args: Parameters<VaylixClient['ttl']>): Promise<number> { return (await this.acquire()).ttl(...args); }
+  public async persist(...args: Parameters<VaylixClient['persist']>): Promise<boolean> { return (await this.acquire()).persist(...args); }
+  public async info(...args: Parameters<VaylixClient['info']>) { return (await this.acquire()).info(...args); }
+  public async health(...args: Parameters<VaylixClient['health']>) { return (await this.acquire()).health(...args); }
+  public async showReplication(...args: Parameters<VaylixClient['showReplication']>) { return (await this.acquire()).showReplication(...args); }
+  public async promoteFollower(...args: Parameters<VaylixClient['promoteFollower']>) { return (await this.acquire()).promoteFollower(...args); }
+  public async pauseReplication(...args: Parameters<VaylixClient['pauseReplication']>) { return (await this.acquire()).pauseReplication(...args); }
+  public async resumeReplication(...args: Parameters<VaylixClient['resumeReplication']>) { return (await this.acquire()).resumeReplication(...args); }
+  public async metrics(...args: Parameters<VaylixClient['metrics']>) { return (await this.acquire()).metrics(...args); }
+  public async metricsProm(...args: Parameters<VaylixClient['metricsProm']>) { return (await this.acquire()).metricsProm(...args); }
   public async transaction() { return (await this.acquire()).transaction(); }
 }

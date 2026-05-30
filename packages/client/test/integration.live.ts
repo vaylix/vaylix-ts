@@ -4,7 +4,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createClient, createPool } from '../src/index.js';
-import { AuthenticationError } from '../src/errors/index.js';
+import {
+  AuthenticationError,
+  FollowerWriteRejectedError,
+  ReplicationPromotionDeniedError,
+} from '../src/errors/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +23,7 @@ test('live integration against configured Vaylix server', async (t) => {
   const msetA = `${prefix}:a`;
   const msetB = `${prefix}:b`;
   const txKey = `${prefix}:tx`;
+  let serverVersion = 'unknown';
 
   await client.connect();
   try {
@@ -64,7 +69,7 @@ test('live integration against configured Vaylix server', async (t) => {
 
     await t.test('info metrics and metricsProm', async () => {
       const info = await client.info();
-      assert.equal(info['server.version'], '0.3.0');
+      serverVersion = info['server.version'] ?? 'unknown';
       assert.equal(info['transport.protocol_magic'], 'VTP2');
 
       const metrics = await client.metrics();
@@ -74,6 +79,22 @@ test('live integration against configured Vaylix server', async (t) => {
       const prom = await client.metricsProm();
       assert.match(prom, /# HELP vaylix_server_request_count/);
       assert.match(prom, /# TYPE vaylix_server_request_count counter/);
+    });
+
+    await t.test('health and replication inspection', async () => {
+      if (!supports040(serverVersion)) {
+        return;
+      }
+
+      const health = await client.health();
+      assert.equal(typeof health.status, 'string');
+      assert.equal(typeof health.ready, 'string');
+      assert.equal(typeof health.reason, 'string');
+      assert.equal(typeof health.role, 'string');
+
+      const replication = await client.showReplication();
+      assert.equal(typeof replication.role, 'string');
+      assert.equal(typeof replication.health, 'string');
     });
 
     await t.test('transaction exec', async () => {
@@ -140,6 +161,38 @@ test('authentication failure maps to AuthenticationError', async () => {
   }
 });
 
+test('leader-only replication commands surface typed errors when denied', async () => {
+  const client = createClient({ url: databaseUrl });
+  await client.connect();
+  try {
+    const info = await client.info();
+    if (!supports040(info['server.version'] ?? 'unknown')) {
+      return;
+    }
+    await assert.rejects(() => client.promoteFollower(), ReplicationPromotionDeniedError);
+  } finally {
+    await client.close();
+  }
+});
+
+test('follower write rejection is typed when a follower URL is configured', async () => {
+  const followerUrl = process.env.FOLLOWER_DATABASE_URL;
+  if (!followerUrl) {
+    return;
+  }
+
+  const client = createClient({ url: followerUrl });
+  await client.connect();
+  try {
+    await assert.rejects(
+      () => client.set(`sdk:test:follower:${Date.now()}:${process.pid}`, 'value'),
+      FollowerWriteRejectedError,
+    );
+  } finally {
+    await client.close();
+  }
+});
+
 function resolveDatabaseUrl(): string {
   if (process.env.DATABASE_URL) {
     return process.env.DATABASE_URL;
@@ -175,4 +228,15 @@ function withInvalidPassword(urlString: string): string {
   }
   url.password = `${url.password}-invalid`;
   return url.toString();
+}
+
+function supports040(version: string): boolean {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  if (!match) {
+    return false;
+  }
+  const [, majorText, minorText] = match;
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  return major > 0 || minor >= 4;
 }

@@ -1,7 +1,7 @@
 {
   "name": "@vaylix/playground",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "npm run build -w @vaylix/client && tsx src/index.ts",
@@ -10,7 +10,7 @@
     "test": "node --eval \"console.log('no tests')\""
   },
   "dependencies": {
-    "@vaylix/client": "0.1.2",
+    "@vaylix/client": "0.2.0",
     "dotenv": "17.4.2"
   }
 }

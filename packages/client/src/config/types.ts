@@ -1,5 +1,11 @@
+/**
+ * Compression modes supported by the Vaylix transport.
+ */
 export type CompressionMode = 'zstd' | 'none';
 
+/**
+ * TLS settings for a client connection.
+ */
 export interface TlsConfig {
   enabled: boolean;
   caFile?: string;
@@ -9,6 +15,9 @@ export interface TlsConfig {
   rejectUnauthorized?: boolean;
 }
 
+/**
+ * Optional structured logger used by the client for connection lifecycle logs.
+ */
 export interface Logger {
   debug?(message: string, fields?: Record<string, unknown>): void;
   info?(message: string, fields?: Record<string, unknown>): void;
@@ -16,6 +25,11 @@ export interface Logger {
   error?(message: string, fields?: Record<string, unknown>): void;
 }
 
+/**
+ * User-supplied configuration for creating a client or pool.
+ *
+ * If `url` is omitted, the client falls back to `process.env.DATABASE_URL`.
+ */
 export interface ClientConfig {
   url?: string;
   host?: string;
@@ -32,6 +46,9 @@ export interface ClientConfig {
   logger?: Logger;
 }
 
+/**
+ * Fully resolved runtime configuration after defaults and URL parsing.
+ */
 export interface ResolvedClientConfig {
   host: string;
   port: number;

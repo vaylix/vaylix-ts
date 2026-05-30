@@ -3,8 +3,14 @@ import type { TLSSocket } from 'node:tls';
 import {
   AuthenticationError,
   AuthorizationError,
+  ConnectionError,
+  FollowerWriteRejectedError,
   ProtocolError,
+  ReplicationAckTimeoutError,
+  ReplicationAckUnavailableError,
+  ReplicationPromotionDeniedError,
   RemoteCommandError,
+  TimeoutError,
 } from '../errors/index.js';
 import { createDeferred, type Deferred } from '../internal/deferred.js';
 import { nextRequestId } from '../internal/request-id.js';
@@ -152,15 +158,21 @@ export class Connection {
     });
     socket.on('error', (error) => {
       for (const pending of this.pending.values()) {
-        pending.reject(error);
+        pending.reject(new ConnectionError('connection error', { cause: error }));
       }
       this.pending.clear();
+      this.socket = undefined;
+      this.readLoopStarted = false;
+      this.readBuffer = Buffer.alloc(0);
     });
     socket.on('close', () => {
       for (const pending of this.pending.values()) {
         pending.reject(new ProtocolError('connection closed'));
       }
       this.pending.clear();
+      this.socket = undefined;
+      this.readLoopStarted = false;
+      this.readBuffer = Buffer.alloc(0);
     });
   }
 
@@ -224,12 +236,24 @@ export class Connection {
   }
 }
 
-function classifyRemoteError(payload: { code: string; name: string; message: string }): Error {
+export function classifyRemoteError(payload: { code: string; name: string; message: string }): Error {
   if (payload.code === 'SRV-008' || payload.name === 'Authentication Failed') {
     return new AuthenticationError(payload.message);
   }
   if (payload.code === 'SRV-017' || payload.name === 'Permission Denied') {
     return new AuthorizationError(payload.message);
+  }
+  if (payload.code === 'SRV-035' || payload.name === 'Replication Acknowledgement Timeout') {
+    return new ReplicationAckTimeoutError(payload.message);
+  }
+  if (payload.code === 'SRV-036' || payload.name === 'Replication Acknowledgement Unavailable') {
+    return new ReplicationAckUnavailableError(payload.message);
+  }
+  if (payload.code === 'SRV-037' || payload.name === 'Follower Write Rejected') {
+    return new FollowerWriteRejectedError(payload.message);
+  }
+  if (payload.code === 'SRV-038' || payload.name === 'Replication Promotion Denied') {
+    return new ReplicationPromotionDeniedError(payload.message);
   }
   return new RemoteCommandError('ERROR', payload);
 }
@@ -251,7 +275,7 @@ function encodeAuthPayload(username: string, password: string): Buffer {
 
 function promiseWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new ProtocolError('request timed out')), timeoutMs);
+    const timer = setTimeout(() => reject(new TimeoutError('request timed out')), timeoutMs);
     void promise.then(
       (value) => {
         clearTimeout(timer);

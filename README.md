@@ -147,15 +147,39 @@ await client.persist('session:1'); // true | false
 
 ```ts
 const info = await client.info();
+const health = await client.health();
+const replication = await client.showReplication();
 const metrics = await client.metrics();
 const prom = await client.metricsProm();
 ```
 
 `info()` returns `Record<string, string>`.
 
+`health()` returns `Record<string, string>`.
+
+`showReplication()` returns `Record<string, string>`.
+
 `metrics()` returns `Record<string, number>`.
 
 `metricsProm()` returns Prometheus exposition text.
+
+### Replication and health operations
+
+```ts
+const health = await client.health();
+const replication = await client.showReplication();
+```
+
+Leader-only operational commands:
+
+```ts
+await client.promoteFollower();
+await client.pauseReplication();
+await client.resumeReplication();
+```
+
+These commands are intended for operator workflows. The server may reject them
+when the current node role or safety conditions do not allow the operation.
 
 ## Transactions
 
@@ -219,6 +243,10 @@ The client exports typed errors:
 - `ProtocolError`
 - `AuthenticationError`
 - `AuthorizationError`
+- `ReplicationAckTimeoutError`
+- `ReplicationAckUnavailableError`
+- `FollowerWriteRejectedError`
+- `ReplicationPromotionDeniedError`
 - `RemoteCommandError`
 
 Example:
