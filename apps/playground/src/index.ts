@@ -1,4 +1,12 @@
+import { config as loadEnv } from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createClient } from '@vaylix/client';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+loadEnv({ path: path.resolve(__dirname, '../../../.env') });
 
 async function main(): Promise<void> {
   const client = createClient();

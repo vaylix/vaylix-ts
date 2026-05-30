@@ -1,6 +1,7 @@
 import { encodeKey, encodeKeyU64, encodeKeys, encodeSet } from '../commands/encoding.js';
+import { ProtocolError } from '../errors/index.js';
 import { opcodes } from '../protocol/opcodes.js';
-import { decodeStrings } from '../protocol/response.js';
+import { decodeExecResults, type DecodedExecResult } from '../protocol/response.js';
 import type { TransactionCommandResult, VaylixTransaction } from '../types/public.js';
 import { Connection } from '../net/connection.js';
 
@@ -96,7 +97,7 @@ export class Transaction implements VaylixTransaction {
       await this.connection.request({ opcode: command.opcode, payload: command.payload });
     }
     const response = await this.connection.request({ opcode: opcodes.Exec, payload: Buffer.alloc(0) });
-    const results = decodeStrings(response.payload);
+    const results = decodeExecResults(response.payload);
     if (results.length !== this.queued.length) {
       throw new RangeError(`EXEC returned ${results.length} results for ${this.queued.length} queued commands`);
     }
@@ -120,27 +121,41 @@ export class Transaction implements VaylixTransaction {
   }
 }
 
-function decodeExecResult(command: QueuedCommand, raw: string | null): TransactionCommandResult {
-  if (raw === null || raw === '(nil)') {
-    return command.kind === 'get'
-      ? { status: 'NOT_FOUND', value: null }
-      : { status: 'NOT_FOUND' };
-  }
-
+function decodeExecResult(command: QueuedCommand, result: DecodedExecResult): TransactionCommandResult {
   switch (command.kind) {
     case 'get':
-      return raw === 'NOT_FOUND'
-        ? { status: 'NOT_FOUND', value: null }
-        : { status: 'OK', value: raw };
+      if (result.kind === 'not_found') {
+        return { status: 'NOT_FOUND', value: null };
+      }
+      if (result.kind === 'value') {
+        return { status: 'OK', value: result.value };
+      }
+      break;
     case 'set':
-      return { status: 'OK' };
+      if (result.kind === 'ok') {
+        return { status: 'OK' };
+      }
+      break;
     case 'del':
-      return { status: 'OK', integer: Number.parseInt(raw, 10) };
+      if (result.kind === 'count') {
+        return { status: 'OK', integer: result.value };
+      }
+      break;
     case 'exists':
     case 'expire':
     case 'persist':
-      return { status: 'OK', boolean: raw === 'true' };
+      if (result.kind === 'boolean') {
+        return { status: 'OK', boolean: result.value };
+      }
+      break;
     case 'ttl':
-      return { status: 'OK', integer: Number.parseInt(raw, 10) };
+      if (result.kind === 'integer') {
+        return { status: 'OK', integer: result.value };
+      }
+      break;
   }
+
+  throw new ProtocolError(
+    `unexpected EXEC result for ${command.kind}: ${JSON.stringify(result)}`,
+  );
 }

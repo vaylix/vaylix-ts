@@ -1,102 +1,262 @@
-# Vaylix TypeScript SDK
+# `@vaylix/client`
 
-Node-focused TypeScript workspace for Vaylix protocol `0.2.x`.
+Official TypeScript client for Vaylix.
 
-## Workspace Layout
-
-- `packages/client`
-  - published SDK package: `@vaylix/client`
-- `apps/playground`
-  - internal manual test app; not published
-
-## Versioning
-
-This repository uses Semantic Versioning.
-
-- workspace version source of truth: root [package.json](./package.json)
-- published package version: [packages/client/package.json](./packages/client/package.json)
-- playground version is kept aligned with the workspace version for internal consistency
-
-Validate version consistency with:
+## Install
 
 ```sh
-npm run version:check
+npm install @vaylix/client
 ```
 
-The script enforces:
+## Runtime
 
-- valid semver versions for root, client, and playground
-- root, client, and playground versions must match
-- `apps/playground` must depend on the exact current `@vaylix/client` version
+- Node.js only
+- ESM and CommonJS supported
+- speaks the Vaylix wire protocol directly over TCP/TLS
 
-## Development
+This package reads `process.env.DATABASE_URL` when no explicit `url` is provided.
+It does **not** load `.env` files by itself.
 
-Install dependencies:
+If your app uses `.env`, load it in the application entrypoint:
 
-```sh
-npm install
+```ts
+import 'dotenv/config';
+import { createClient } from '@vaylix/client';
 ```
 
-Build the workspace:
+## Connection
 
-```sh
-npm run build
+### Explicit URL
+
+```ts
+import { createClient } from '@vaylix/client';
+
+const client = createClient({
+  url: 'vaylix://vaylix:vaylix@127.0.0.1:9173',
+});
+
+await client.connect();
 ```
 
-Typecheck:
+### `DATABASE_URL`
 
-```sh
-npm run check
+```env
+DATABASE_URL=vaylix://vaylix:vaylix@127.0.0.1:9173
 ```
 
-Run tests:
+```ts
+import { createClient } from '@vaylix/client';
 
-```sh
-npm run test
+const client = createClient();
+await client.connect();
 ```
 
-Run the playground:
+### TLS
 
-```sh
-npm run playground
+```ts
+import { createClient } from '@vaylix/client';
+
+const client = createClient({
+  url: 'vaylix://user:password@db.example.com:9173?ssl=true',
+  tls: {
+    enabled: true,
+    caFile: '/path/to/ca.pem',
+    certFile: '/path/to/client.crt',
+    keyFile: '/path/to/client.key',
+  },
+});
 ```
 
-The playground and default client config read `DATABASE_URL` from `.env` or the process environment.
+## Basic Usage
+
+```ts
+import { createClient } from '@vaylix/client';
+
+const client = createClient({
+  url: 'vaylix://vaylix:vaylix@127.0.0.1:9173',
+});
+
+await client.connect();
+
+try {
+  await client.set('app:greeting', 'hello');
+  const value = await client.get('app:greeting');
+  console.log(value); // "hello"
+} finally {
+  await client.close();
+}
+```
+
+## Supported Operations
+
+### Ping
+
+```ts
+await client.ping(); // "PONG"
+```
+
+### Get / Set
+
+```ts
+await client.set('user:1', 'alice'); // "OK"
+await client.get('user:1'); // "alice"
+await client.get('user:missing'); // null
+```
+
+### `SET` options
+
+```ts
+await client.set('key', 'value', { onlyIfMissing: true }); // boolean
+await client.set('key', 'value', { onlyIfExists: true }); // boolean
+await client.set('key', 'next', { returnPrevious: true }); // previous value or null
+await client.set('key', 'value', { ttlSeconds: 60 }); // "OK"
+await client.set('key', 'value', { ttlMilliseconds: 5000 }); // "OK"
+await client.set('key', 'value', { keepTtl: true }); // "OK"
+```
+
+### Batch operations
+
+```ts
+await client.mset({
+  'user:1': 'alice',
+  'user:2': 'bob',
+});
+
+const values = await client.mget(['user:1', 'user:2', 'user:3']);
+// ["alice", "bob", null]
+```
+
+### Existence and deletion
+
+```ts
+await client.exists('user:1'); // true | false
+await client.del('user:1', 'user:2'); // number of removed keys
+```
+
+### Expiration
+
+```ts
+await client.expire('session:1', 60); // true | false
+await client.ttl('session:1'); // integer TTL semantics from server
+await client.persist('session:1'); // true | false
+```
+
+### Info and metrics
+
+```ts
+const info = await client.info();
+const metrics = await client.metrics();
+const prom = await client.metricsProm();
+```
+
+`info()` returns `Record<string, string>`.
+
+`metrics()` returns `Record<string, number>`.
+
+`metricsProm()` returns Prometheus exposition text.
+
+## Transactions
+
+Transactions are explicit.
+
+```ts
+const tx = await client.transaction();
+
+tx.set('tx:key', 'alpha');
+tx.get('tx:key');
+tx.exists('tx:key');
+
+const result = await tx.exec();
+```
+
+Example result:
+
+```ts
+[
+  { status: 'OK' },
+  { status: 'OK', value: 'alpha' },
+  { status: 'OK', boolean: true },
+];
+```
+
+Discarding a transaction:
+
+```ts
+const tx = await client.transaction();
+tx.set('tx:key', 'value');
+await tx.discard();
+```
+
+## Pooling
+
+```ts
+import { createPool } from '@vaylix/client';
+
+const pool = createPool({
+  url: 'vaylix://vaylix:vaylix@127.0.0.1:9173',
+  max: 4,
+});
+
+await pool.connect();
+
+try {
+  await pool.set('pool:key', 'value');
+  console.log(await pool.get('pool:key'));
+} finally {
+  await pool.close();
+}
+```
+
+## Errors
+
+The client exports typed errors:
+
+- `VaylixError`
+- `ConnectionError`
+- `TimeoutError`
+- `ProtocolError`
+- `AuthenticationError`
+- `AuthorizationError`
+- `RemoteCommandError`
 
 Example:
 
-```env
-DATABASE_URL=vaylix://vaylix:vaylix@192.168.29.10:9173
+```ts
+import { AuthenticationError, createClient } from '@vaylix/client';
+
+const client = createClient({
+  url: 'vaylix://user:wrong-password@127.0.0.1:9173',
+});
+
+try {
+  await client.connect();
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error('authentication failed');
+  }
+}
 ```
 
-## Package Output
+## Configuration
 
-`@vaylix/client` is built with:
+Supported client config fields:
 
-- `tsup` for JavaScript emission
-- `tsc` for declaration emission
+- `url`
+- `host`
+- `port`
+- `username`
+- `password`
+- `tls`
+- `compression`
+- `connectTimeoutMs`
+- `requestTimeoutMs`
+- `maxFrameSize`
+- `clientName`
+- `clientVersion`
+- `logger`
 
-Output characteristics:
+## Notes
 
-- dual ESM + CJS
-- preserved module/file structure in `dist/`
-- public API exposed through factory functions only
-
-## Current Scope
-
-Implemented foundation:
-
-- config and `DATABASE_URL` resolution
-- startup negotiation
-- frame encode/decode
-- TCP/TLS connection layer
-- basic string commands
-- metrics/info methods
-- explicit transaction object
-
-Not yet validated end-to-end enough to claim production stability:
-
-- full integration coverage against a live Vaylix server
-- TLS/mTLS integration coverage
-- maintenance-mode behavior coverage
-- exhaustive transaction `EXEC` response validation
+- This package is application-facing. It is not a wrapper around the Rust CLI.
+- The library reads `process.env.DATABASE_URL` if present, but environment bootstrapping remains the application’s responsibility.
+- Compatibility details for specific releases belong in the changelog and release notes, not in this README.

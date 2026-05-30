@@ -4,6 +4,22 @@ import { BufferReader } from '../internal/buffer.js';
 import type { ErrorPayload } from '../types/public.js';
 import { responseStatus } from './status.js';
 
+export interface DecodedExecScanResult {
+  nextCursor: number;
+  keys: string[];
+}
+
+export type DecodedExecResult =
+  | { kind: 'ok' }
+  | { kind: 'not_found' }
+  | { kind: 'value'; value: string }
+  | { kind: 'boolean'; value: boolean }
+  | { kind: 'count'; value: number }
+  | { kind: 'integer'; value: number }
+  | { kind: 'entries'; value: Array<[string, string]> }
+  | { kind: 'strings'; value: Array<string | null> }
+  | { kind: 'scan'; value: DecodedExecScanResult };
+
 export interface DecodedResponse {
   requestId: string;
   status: 'OK' | 'ERROR' | 'NOT_FOUND';
@@ -94,4 +110,73 @@ export function decodeErrorPayload(payload: Buffer): ErrorPayload {
   const message = reader.readString32();
   reader.ensureFullyRead();
   return { code, name, message };
+}
+
+export function decodeExecResults(payload: Buffer): DecodedExecResult[] {
+  const reader = new BufferReader(payload);
+  const count = reader.readUInt32BE();
+  const results: DecodedExecResult[] = [];
+  for (let index = 0; index < count; index += 1) {
+    results.push(decodeExecResult(reader));
+  }
+  reader.ensureFullyRead();
+  return results;
+}
+
+function decodeExecResult(reader: BufferReader): DecodedExecResult {
+  const kind = reader.readUInt8();
+  switch (kind) {
+    case 0x00:
+      return { kind: 'ok' };
+    case 0x01:
+      return { kind: 'not_found' };
+    case 0x02:
+      return { kind: 'value', value: reader.readString32() };
+    case 0x03: {
+      const value = reader.readUInt8();
+      if (value !== 0 && value !== 1) {
+        throw new ProtocolError('invalid EXEC boolean payload');
+      }
+      return { kind: 'boolean', value: value === 1 };
+    }
+    case 0x04:
+      return { kind: 'count', value: Number(reader.readBigUInt64BE()) };
+    case 0x05:
+      return { kind: 'integer', value: Number(reader.readBigInt64BE()) };
+    case 0x06: {
+      const count = reader.readUInt32BE();
+      const entries: Array<[string, string]> = [];
+      for (let index = 0; index < count; index += 1) {
+        entries.push([reader.readString16(), reader.readString32()]);
+      }
+      return { kind: 'entries', value: entries };
+    }
+    case 0x07: {
+      const count = reader.readUInt32BE();
+      const values: Array<string | null> = [];
+      for (let index = 0; index < count; index += 1) {
+        const flag = reader.readUInt8();
+        if (flag === 0) {
+          values.push(null);
+          continue;
+        }
+        if (flag !== 1) {
+          throw new ProtocolError('invalid EXEC optional string flag');
+        }
+        values.push(reader.readString32());
+      }
+      return { kind: 'strings', value: values };
+    }
+    case 0x08: {
+      const nextCursor = Number(reader.readBigUInt64BE());
+      const count = reader.readUInt32BE();
+      const keys: string[] = [];
+      for (let index = 0; index < count; index += 1) {
+        keys.push(reader.readString16());
+      }
+      return { kind: 'scan', value: { nextCursor, keys } };
+    }
+    default:
+      throw new ProtocolError(`unknown EXEC result kind: 0x${kind.toString(16)}`);
+  }
 }

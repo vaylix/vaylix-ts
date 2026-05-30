@@ -6,6 +6,7 @@ import type { ResolvedClientConfig } from '../config/types.js';
 
 export async function openSocket(config: ResolvedClientConfig): Promise<Socket | TLSSocket> {
   return new Promise((resolve, reject) => {
+    let settled = false;
     const onError = (error: Error): void => reject(new ConnectionError(error.message, { cause: error }));
     const onTimeout = (): void => reject(new TimeoutError('connection timeout'));
 
@@ -28,19 +29,20 @@ export async function openSocket(config: ResolvedClientConfig): Promise<Socket |
 
     socket.once('error', onError);
     socket.once('timeout', onTimeout);
-    socket.once('connect', () => {
+    const onConnected = (): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       socket.off('error', onError);
       socket.off('timeout', onTimeout);
       socket.setKeepAlive(true);
       resolve(socket);
-    });
+    };
     if (socket instanceof TLSSocket) {
-      socket.once('secureConnect', () => {
-        socket.off('error', onError);
-        socket.off('timeout', onTimeout);
-        socket.setKeepAlive(true);
-        resolve(socket);
-      });
+      socket.once('secureConnect', onConnected);
+    } else {
+      socket.once('connect', onConnected);
     }
   });
 }

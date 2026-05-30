@@ -14,7 +14,7 @@ const DEFAULT_CONNECT_TIMEOUT_MS = 5_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_FRAME_SIZE = 8 * 1024 * 1024;
 const DEFAULT_CLIENT_NAME = '@vaylix/client';
-const DEFAULT_CLIENT_VERSION = '0.2.0';
+const DEFAULT_CLIENT_VERSION = '0.1.1';
 
 export function resolveClientConfig(
   config: ClientConfig = {},

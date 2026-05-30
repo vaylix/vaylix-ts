@@ -1,6 +1,5 @@
 export { createClient } from './client/factory.js';
 export { createPool } from './pool/factory.js';
-import 'dotenv/config.js';
 
 export type {
   CommandOptions,

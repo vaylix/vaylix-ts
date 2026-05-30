@@ -35,6 +35,13 @@ export class BufferReader {
     return value;
   }
 
+  public readBigInt64BE(): bigint {
+    this.ensure(8);
+    const value = this.buffer.readBigInt64BE(this.offset);
+    this.offset += 8;
+    return value;
+  }
+
   public readBytes(length: number): Buffer {
     this.ensure(length);
     const value = this.buffer.subarray(this.offset, this.offset + length);
