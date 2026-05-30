@@ -1,12 +1,24 @@
 {
   "name": "@vaylix/client",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "description": "Official TypeScript client for the Vaylix database.",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaylix/vaylix-ts.git"
+  },
+  "homepage": "https://vaylix.github.io",
+  "bugs": {
+    "url": "https://github.com/vaylix/vaylix-ts/issues"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "provenance": true,
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,19 +27,21 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "npm run build:js && npm run build:types",
     "build:js": "tsup --config tsup.config.ts",
     "build:types": "tsc -p tsconfig.types.json",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "node --import tsx --test test/*.test.ts"
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:live": "node --import tsx test/integration.live.ts",
+    "prepack": "node ../../scripts/sync-package-readme.mjs"
   },
   "dependencies": {
     "@bokuweb/zstd-wasm": "^0.0.27",
     "crc-32": "^1.2.2",
-    "dotenv": "17.4.2",
     "uuid": "^14.0.0"
   }
 }

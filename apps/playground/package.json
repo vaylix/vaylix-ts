@@ -1,15 +1,16 @@
 {
   "name": "@vaylix/playground",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "npm run build -w @vaylix/client && tsx src/index.ts",
     "build": "npm run build -w @vaylix/client && tsc --noEmit -p tsconfig.json",
     "check": "npm run build -w @vaylix/client && tsc --noEmit -p tsconfig.json",
     "test": "node --eval \"console.log('no tests')\""
   },
   "dependencies": {
-    "@vaylix/client": "0.2.0"
+    "@vaylix/client": "0.1.1",
+    "dotenv": "17.4.2"
   }
 }

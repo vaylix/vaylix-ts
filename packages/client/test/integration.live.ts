@@ -64,7 +64,7 @@ test('live integration against configured Vaylix server', async (t) => {
 
     await t.test('info metrics and metricsProm', async () => {
       const info = await client.info();
-      assert.equal(info['server.version'], '0.2.0');
+      assert.equal(info['server.version'], '0.3.0');
       assert.equal(info['transport.protocol_magic'], 'VTP2');
 
       const metrics = await client.metrics();
@@ -88,6 +88,21 @@ test('live integration against configured Vaylix server', async (t) => {
         { status: 'OK', boolean: true },
       ]);
       assert.equal(await client.get(txKey), 'alpha');
+    });
+
+    await t.test('transaction typed result variants', async () => {
+      const ttlKey = `${prefix}:tx-ttl`;
+      await client.set(ttlKey, 'ttl-live');
+      const tx = await client.transaction();
+      tx.exists(ttlKey);
+      tx.ttl(ttlKey);
+      tx.del(ttlKey);
+      const result = await tx.exec();
+      assert.deepEqual(result, [
+        { status: 'OK', boolean: true },
+        { status: 'OK', integer: -1 },
+        { status: 'OK', integer: 1 },
+      ]);
     });
 
     await t.test('transaction discard', async () => {

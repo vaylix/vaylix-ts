@@ -18,6 +18,8 @@ packages/*/.tsup
 apps/*/dist
 apps/*/node_modules
 *.tsbuildinfo
+*.tgz
+packages/client/README.md
 
 # Editor directories and files
 .vscode/*
