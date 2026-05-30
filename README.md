@@ -11,8 +11,10 @@ npm install @vaylix/client
 ## Runtime
 
 - Node.js only
+- Node.js `>= 20.19.0`
 - ESM and CommonJS supported
 - speaks the Vaylix wire protocol directly over TCP/TLS
+- zstd compression uses a native Node addon with prebuilt binaries
 
 This package reads `process.env.DATABASE_URL` when no explicit `url` is provided.
 It does **not** load `.env` files by itself.

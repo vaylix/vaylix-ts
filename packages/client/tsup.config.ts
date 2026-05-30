@@ -9,7 +9,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   clean: true,
-  target: 'node22',
+  target: 'node24',
   outDir: 'dist',
   outExtension({ format }) {
     return {
