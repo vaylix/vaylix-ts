@@ -8,6 +8,18 @@
     "type": "git",
     "url": "git+https://github.com/vaylix/vaylix-ts.git"
   },
+  "keywords": [
+    "vaylix",
+    "database",
+    "db",
+    "client",
+    "sdk",
+    "typescript",
+    "nodejs",
+    "tcp",
+    "kv",
+    "key-value"
+  ],
   "homepage": "https://vaylix.github.io",
   "bugs": {
     "url": "https://github.com/vaylix/vaylix-ts/issues"
