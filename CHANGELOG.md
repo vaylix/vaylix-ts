@@ -4,11 +4,18 @@ All notable changes to this repository will be documented in this file.
 
 The format is based on Keep a Changelog and the versioning policy follows Semantic Versioning.
 
+## [0.1.2] - 2026-05-30
+
+### Changed
+
+- replaced `@bokuweb/zstd-wasm` with the Node-native `@mongodb-js/zstd` binding
+- documented Node `>= 20.19.0` as the required runtime floor for native zstd support
+
 ## [0.1.1] - 2026-05-30
 
 ### Changed
 
-- bumped the package version to `0.1.1` for the first signed GitHub Actions release path
+- bumped the package version to `0.1.1` for the GitHub Actions release path
 - kept the SDK surface unchanged from `0.1.0`
 
 ## [0.1.0] - 2026-05-30
