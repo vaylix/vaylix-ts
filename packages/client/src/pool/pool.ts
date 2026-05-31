@@ -52,6 +52,9 @@ export class PoolImpl implements VaylixPool {
   public async persist(...args: Parameters<VaylixClient['persist']>): Promise<boolean> { return (await this.acquire()).persist(...args); }
   public async info(...args: Parameters<VaylixClient['info']>) { return (await this.acquire()).info(...args); }
   public async health(...args: Parameters<VaylixClient['health']>) { return (await this.acquire()).health(...args); }
+  public async showCluster(...args: Parameters<VaylixClient['showCluster']>) { return (await this.acquire()).showCluster(...args); }
+  public async clusterJoin(...args: Parameters<VaylixClient['clusterJoin']>) { return (await this.acquire()).clusterJoin(...args); }
+  public async clusterRemove(...args: Parameters<VaylixClient['clusterRemove']>) { return (await this.acquire()).clusterRemove(...args); }
   public async showReplication(...args: Parameters<VaylixClient['showReplication']>) { return (await this.acquire()).showReplication(...args); }
   public async promoteFollower(...args: Parameters<VaylixClient['promoteFollower']>) { return (await this.acquire()).promoteFollower(...args); }
   public async pauseReplication(...args: Parameters<VaylixClient['pauseReplication']>) { return (await this.acquire()).pauseReplication(...args); }
