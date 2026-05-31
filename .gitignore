@@ -16,6 +16,7 @@ packages/*/dist
 packages/*/node_modules
 packages/*/.tsup
 apps/*/dist
+apps/*/dist-server
 apps/*/node_modules
 *.tsbuildinfo
 *.tgz
