@@ -2,19 +2,31 @@ import type { ClientConfig } from '../config/types.js';
 import type { SetResult, VaylixClient } from '../client/types.js';
 
 /**
- * Connection-pool sizing and timing controls.
+ * Connection-pool sizing and timing controls accepted by `createPool()`.
  */
 export interface PoolConfig {
+  /**
+   * Minimum idle connection count reserved for future pool warmup behavior.
+   */
   min?: number;
+  /**
+   * Maximum number of client connections opened by the pool.
+   */
   max?: number;
+  /**
+   * Idle close threshold in milliseconds, reserved for future pool trimming.
+   */
   idleTimeoutMs?: number;
+  /**
+   * Maximum time to wait for a pooled connection, reserved for future bounded acquisition.
+   */
   acquireTimeoutMs?: number;
 }
 
 /**
  * Round-robin pool facade over multiple `VaylixClient` connections.
  */
-export interface VaylixPool extends Pick<VaylixClient, 'ping' | 'get' | 'del' | 'exists' | 'mget' | 'mset' | 'expire' | 'ttl' | 'persist' | 'info' | 'health' | 'showReplication' | 'promoteFollower' | 'pauseReplication' | 'resumeReplication' | 'metrics' | 'metricsProm' | 'transaction'> {
+export interface VaylixPool extends Pick<VaylixClient, 'ping' | 'get' | 'del' | 'exists' | 'mget' | 'mset' | 'expire' | 'ttl' | 'persist' | 'info' | 'health' | 'showCluster' | 'clusterJoin' | 'clusterRemove' | 'showReplication' | 'promoteFollower' | 'pauseReplication' | 'resumeReplication' | 'metrics' | 'metricsProm' | 'transaction'> {
   /**
    * Open all configured pooled connections.
    */

@@ -1,4 +1,5 @@
 import type {
+  ClusterInfoMap,
   HealthMap,
   InfoMap,
   MetricsMap,
@@ -24,11 +25,29 @@ export interface CommandOptions {
  * Modifiers supported by the `SET` command.
  */
 export interface SetOptions {
+  /**
+   * Expire the value after this many whole seconds.
+   */
   ttlSeconds?: number;
+  /**
+   * Expire the value after this many milliseconds.
+   */
   ttlMilliseconds?: number;
+  /**
+   * Preserve the existing TTL when overwriting a key.
+   */
   keepTtl?: boolean;
+  /**
+   * Write only when the key does not already exist.
+   */
   onlyIfMissing?: boolean;
+  /**
+   * Write only when the key already exists.
+   */
   onlyIfExists?: boolean;
+  /**
+   * Return the previous value instead of a plain `"OK"` result.
+   */
   returnPrevious?: boolean;
 }
 
@@ -101,6 +120,23 @@ export interface VaylixClient {
    * Read machine-oriented health status for the current node.
    */
   health(options?: CommandOptions): Promise<HealthMap>;
+  /**
+   * Read Vaylix v0.5.0 cluster term, leader, quorum, and member state.
+   */
+  showCluster(options?: CommandOptions): Promise<ClusterInfoMap>;
+  /**
+   * Add or update a cluster member.
+   *
+   * Vaylix v0.5.0 expects `address` in `host:port` form and may reject the
+   * command when the current node cannot safely apply membership changes.
+   */
+  clusterJoin(nodeId: string, address: string, options?: CommandOptions): Promise<'OK'>;
+  /**
+   * Remove a cluster member by node id.
+   *
+   * Use this operator command only after accounting for quorum impact.
+   */
+  clusterRemove(nodeId: string, options?: CommandOptions): Promise<'OK'>;
   /**
    * Read replication role, lag, and acknowledgement state for the current node.
    */

@@ -13,6 +13,13 @@ export function encodeKeyValue(key: string, value: string): Buffer {
   return writer.toBuffer();
 }
 
+export function encodeStringPair(left: string, right: string): Buffer {
+  const writer = new BufferWriter();
+  writer.writeString16(left);
+  writer.writeString16(right);
+  return writer.toBuffer();
+}
+
 export function encodeKeys(keys: string[]): Buffer {
   const writer = new BufferWriter();
   if (keys.length > 0xffff) {

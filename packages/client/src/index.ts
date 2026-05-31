@@ -14,6 +14,7 @@ export type {
 } from './config/types.js';
 export type { PoolConfig, VaylixPool } from './pool/types.js';
 export type {
+  ClusterInfoMap,
   ErrorPayload,
   HealthMap,
   InfoMap,

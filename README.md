@@ -148,6 +148,7 @@ await client.persist('session:1'); // true | false
 ```ts
 const info = await client.info();
 const health = await client.health();
+const cluster = await client.showCluster();
 const replication = await client.showReplication();
 const metrics = await client.metrics();
 const prom = await client.metricsProm();
@@ -156,6 +157,8 @@ const prom = await client.metricsProm();
 `info()` returns `Record<string, string>`.
 
 `health()` returns `Record<string, string>`.
+
+`showCluster()` returns `Record<string, string>`.
 
 `showReplication()` returns `Record<string, string>`.
 
@@ -167,10 +170,18 @@ const prom = await client.metricsProm();
 
 ```ts
 const health = await client.health();
+const cluster = await client.showCluster();
 const replication = await client.showReplication();
 ```
 
-Leader-only operational commands:
+Vaylix v0.5.0 cluster membership commands:
+
+```ts
+await client.clusterJoin('node-2', 'node-2.internal:9173');
+await client.clusterRemove('node-2');
+```
+
+Leader-only and operator replication commands:
 
 ```ts
 await client.promoteFollower();
@@ -180,6 +191,8 @@ await client.resumeReplication();
 
 These commands are intended for operator workflows. The server may reject them
 when the current node role or safety conditions do not allow the operation.
+Followers may serve stale reads; route reads to the current leader when your
+application requires linearizable read-after-write behavior.
 
 ## Transactions
 

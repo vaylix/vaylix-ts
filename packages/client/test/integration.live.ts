@@ -81,7 +81,7 @@ test('live integration against configured Vaylix server', async (t) => {
       assert.match(prom, /# TYPE vaylix_server_request_count counter/);
     });
 
-    await t.test('health and replication inspection', async () => {
+    await t.test('health and cluster inspection', async () => {
       if (!supports040(serverVersion)) {
         return;
       }
@@ -91,6 +91,14 @@ test('live integration against configured Vaylix server', async (t) => {
       assert.equal(typeof health.ready, 'string');
       assert.equal(typeof health.reason, 'string');
       assert.equal(typeof health.role, 'string');
+
+      if (supports050(serverVersion)) {
+        const cluster = await client.showCluster();
+        assert.equal(typeof cluster.role, 'string');
+        assert.equal(typeof cluster.current_term, 'string');
+        assert.equal(typeof cluster.quorum_size, 'string');
+        assert.equal(typeof cluster.sync_policy, 'string');
+      }
 
       const replication = await client.showReplication();
       assert.equal(typeof replication.role, 'string');
@@ -239,4 +247,15 @@ function supports040(version: string): boolean {
   const major = Number(majorText);
   const minor = Number(minorText);
   return major > 0 || minor >= 4;
+}
+
+function supports050(version: string): boolean {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  if (!match) {
+    return false;
+  }
+  const [, majorText, minorText] = match;
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  return major > 0 || minor >= 5;
 }

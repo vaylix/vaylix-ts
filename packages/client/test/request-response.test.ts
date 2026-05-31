@@ -3,7 +3,8 @@ import test from 'node:test';
 import { stringify } from 'uuid';
 import { ProtocolError, RemoteCommandError } from '../src/errors/index.js';
 import { BufferWriter } from '../src/internal/buffer.js';
-import { encodeKeys, encodeOptionalString, encodePairs, encodeSet } from '../src/commands/encoding.js';
+import { encodeKeys, encodeOptionalString, encodePairs, encodeSet, encodeStringPair } from '../src/commands/encoding.js';
+import { opcodes } from '../src/protocol/opcodes.js';
 import { encodeRequestBody } from '../src/protocol/request.js';
 import { decodeErrorPayload, decodeResponseBody } from '../src/protocol/response.js';
 import { responseStatus } from '../src/protocol/status.js';
@@ -92,6 +93,31 @@ test('encodeKeys and encodePairs use u16 collection counts', () => {
 
   const pairs = encodePairs({ alpha: '1', beta: '2' });
   assert.equal(pairs.readUInt16BE(0), 2);
+});
+
+test('encodeStringPair uses two u16 strings for cluster membership commands', () => {
+  const encoded = encodeStringPair('node-1', '127.0.0.1:9173');
+  let offset = 0;
+  assert.equal(encoded.readUInt16BE(offset), 6);
+  offset += 2;
+  assert.equal(encoded.subarray(offset, offset + 6).toString('utf8'), 'node-1');
+  offset += 6;
+  assert.equal(encoded.readUInt16BE(offset), 14);
+  offset += 2;
+  assert.equal(encoded.subarray(offset, offset + 14).toString('utf8'), '127.0.0.1:9173');
+  offset += 14;
+  assert.equal(offset, encoded.length);
+});
+
+test('v0.5.0 cluster and replication opcodes match the Rust transport', () => {
+  assert.equal(opcodes.Health, 0x3a);
+  assert.equal(opcodes.ShowCluster, 0x3b);
+  assert.equal(opcodes.ClusterJoin, 0x3c);
+  assert.equal(opcodes.ClusterRemove, 0x3d);
+  assert.equal(opcodes.ShowReplication, 0x3e);
+  assert.equal(opcodes.PromoteFollower, 0x3f);
+  assert.equal(opcodes.PauseReplication, 0x40);
+  assert.equal(opcodes.ResumeReplication, 0x41);
 });
 
 test('encodeSet matches the Rust transport wire layout', () => {

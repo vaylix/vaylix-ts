@@ -4,6 +4,23 @@ All notable changes to this repository will be documented in this file.
 
 The format is based on Keep a Changelog and the versioning policy follows Semantic Versioning.
 
+## [0.3.0] - 2026-05-31
+
+### Added
+
+- added Vaylix `0.5.0` server awareness to `@vaylix/client`
+- added `showCluster()` for cluster term, leader, quorum, sync policy, and member diagnostics
+- added `clusterJoin()` and `clusterRemove()` operator methods for v0.5.0 cluster membership commands
+- added public `ClusterInfoMap` type export
+- added opcode compatibility tests for the v0.5.0 cluster and replication command range
+- expanded JSDoc coverage for public configuration, `SET` options, cluster operations, and transaction result fields
+
+### Changed
+
+- bumped the workspace, client package, and playground package versions to `0.3.0`
+- corrected replication command opcodes to match the v0.5.0 Rust transport surface
+- updated live integration coverage to verify `health()`, `showCluster()`, and `showReplication()` against a v0.5.0 server
+
 ## [0.2.0] - 2026-05-30
 
 ### Added

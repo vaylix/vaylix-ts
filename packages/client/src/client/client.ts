@@ -1,9 +1,10 @@
 import { opcodes } from '../protocol/opcodes.js';
-import { encodeKey, encodeKeyU64, encodeKeys, encodeOptionalString, encodePairs, encodeSet } from '../commands/encoding.js';
+import { encodeKey, encodeKeyU64, encodeKeys, encodeOptionalString, encodePairs, encodeSet, encodeStringPair } from '../commands/encoding.js';
 import { decodeBoolean, decodeCount, decodeEntries, decodeInteger, decodeString32, decodeStrings } from '../protocol/response.js';
 import type { ClientConfig } from '../config/types.js';
 import type { CommandOptions, SetOptions, SetResult, VaylixClient } from './types.js';
 import type {
+  ClusterInfoMap,
   HealthMap,
   InfoMap,
   MetricsMap,
@@ -138,6 +139,33 @@ export class ClientImpl implements VaylixClient {
       metadata: toMetadata(options),
     });
     return Object.fromEntries(decodeEntries(response.payload));
+  }
+
+  public async showCluster(options?: CommandOptions): Promise<ClusterInfoMap> {
+    const response = await this.connection.request({
+      opcode: opcodes.ShowCluster,
+      payload: Buffer.alloc(0),
+      metadata: toMetadata(options),
+    });
+    return Object.fromEntries(decodeEntries(response.payload));
+  }
+
+  public async clusterJoin(nodeId: string, address: string, options?: CommandOptions): Promise<'OK'> {
+    await this.connection.request({
+      opcode: opcodes.ClusterJoin,
+      payload: encodeStringPair(nodeId, address),
+      metadata: toMetadata(options),
+    });
+    return 'OK';
+  }
+
+  public async clusterRemove(nodeId: string, options?: CommandOptions): Promise<'OK'> {
+    await this.connection.request({
+      opcode: opcodes.ClusterRemove,
+      payload: encodeKey(nodeId),
+      metadata: toMetadata(options),
+    });
+    return 'OK';
   }
 
   public async showReplication(options?: CommandOptions): Promise<ReplicationInfoMap> {
