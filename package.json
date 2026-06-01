@@ -2,23 +2,22 @@
   "name": "vaylix-typescript-workspace",
   "private": true,
   "version": "0.3.0",
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "scripts": {
-    "build": "npm run build -w @vaylix/client && npm run build -w @vaylix/playground",
-    "check": "npm run check -w @vaylix/client && npm run check -w @vaylix/playground",
-    "test": "npm run test -w @vaylix/client && npm run test -w @vaylix/playground",
-    "test:live": "npm run test:live -w @vaylix/client",
-    "version:check": "node ./scripts/version-check.mjs",
-    "playground": "npm run dev -w @vaylix/playground"
+    "dev": "pnpm --filter @vaylix/playground-shared build && pnpm --filter @vaylix/client build && turbo run dev --filter=@vaylix/client --filter=@vaylix/playground-api --filter=@vaylix/playground-web",
+    "build": "turbo run build",
+    "check": "turbo run check && pnpm --filter @vaylix/scripts typecheck",
+    "test": "turbo run test",
+    "test:live": "pnpm --filter @vaylix/client test:live",
+    "version:check": "pnpm --filter @vaylix/scripts version:check"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "@types/semver": "^7.7.1",
     "semver": "^7.7.3",
     "tsup": "^8.5.0",
     "tsx": "^4.20.6",
+    "turbo": "^2.9.16",
     "typescript": "~6.0.2"
-  }
+  },
+  "packageManager": "pnpm@11.5.0+sha512.dbfcc4f81cf48597afd4bc391ffdf12c11f1a9fb83a395bfa6b0a2d9cc2fd8ffebafdb1ccbd529632153f793904c2615b7f09fe1a345473fd1c35845172a8eb1"
 }

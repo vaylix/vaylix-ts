@@ -1,0 +1,24 @@
+{
+  "$schema": "https://v2-9-6.turborepo.dev/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", "coverage/**"]
+    },
+    "check": {
+      "dependsOn": ["^build", "^check"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  },
+  "globalEnv": ["DATABASE_URL", "PLAYGROUND_HOST", "PLAYGROUND_PORT"],
+  "globalDependencies": [".env"]
+}

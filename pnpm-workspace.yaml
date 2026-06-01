@@ -1,0 +1,17 @@
+# pnpm workspace configuration
+# https://pnpm.io/pnpm-workspace_yaml
+
+packages:
+  # All packages in the packages directory
+  - 'packages/*'
+
+  # All apps in the apps directory
+  - 'apps/*'
+
+  # Internal workspace tooling
+  - 'scripts'
+allowBuilds:
+  '@mongodb-js/zstd': true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@vaylix/client@0.3.0'

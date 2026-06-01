@@ -46,17 +46,19 @@
     "README.md"
   ],
   "scripts": {
-    "build": "npm run build:js && npm run build:types",
-    "build:js": "tsup --config tsup.config.ts",
-    "build:types": "tsc -p tsconfig.types.json",
+    "dev": "pnpm exec concurrently -k -n bundle,types -c cyan,magenta \"pnpm exec tsup --config tsup.config.ts --watch\" \"pnpm exec tsc -p tsconfig.types.json --watch --preserveWatchOutput\"",
+    "build": "tsup --config tsup.config.ts && tsc -p tsconfig.types.json",
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test test/*.test.ts",
     "test:live": "node --import tsx test/integration.live.ts",
-    "prepack": "node ../../scripts/sync-package-readme.mjs"
+    "prepack": "pnpm --dir ../.. --filter @vaylix/scripts sync-package-readme"
   },
   "dependencies": {
     "@mongodb-js/zstd": "^7.0.0",
     "crc-32": "^1.2.2",
     "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
