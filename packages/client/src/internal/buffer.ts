@@ -57,6 +57,10 @@ export class BufferReader {
     return this.readBytes(this.readUInt32BE()).toString('utf8');
   }
 
+  public readBytes32(): Buffer {
+    return this.readBytes(this.readUInt32BE());
+  }
+
   public readOptionalString(): string | undefined {
     const present = this.readUInt8();
     if (present === 0) {
@@ -109,7 +113,15 @@ export class BufferWriter {
   }
 
   public writeBytes(value: Uint8Array): void {
-    this.chunks.push(Buffer.from(value));
+    this.chunks.push(toBufferView(value));
+  }
+
+  public writeBytes32(value: Uint8Array): void {
+    if (value.length > 0xffffffff) {
+      throw new RangeError('byte value exceeds Vaylix u32 payload length');
+    }
+    this.writeUInt32BE(value.length);
+    this.writeBytes(value);
   }
 
   public writeString16(value: string): void {
@@ -136,4 +148,11 @@ export class BufferWriter {
   public toBuffer(): Buffer {
     return Buffer.concat(this.chunks);
   }
+}
+
+function toBufferView(value: Uint8Array): Buffer {
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+  return Buffer.from(value.buffer, value.byteOffset, value.byteLength);
 }

@@ -1,0 +1,20 @@
+{
+  "name": "@vaylix/playground-shared",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --watch -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "test": "node --eval \"console.log('no tests')\""
+  }
+}

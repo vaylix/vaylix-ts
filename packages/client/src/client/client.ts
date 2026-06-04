@@ -1,14 +1,23 @@
 import { opcodes } from '../protocol/opcodes.js';
 import { encodeKey, encodeKeyU64, encodeKeys, encodeOptionalString, encodePairs, encodeSet, encodeStringPair } from '../commands/encoding.js';
-import { decodeBoolean, decodeCount, decodeEntries, decodeInteger, decodeString32, decodeStrings } from '../protocol/response.js';
+import {
+  decodeBoolean,
+  decodeBytes32,
+  decodeCount,
+  decodeEntries,
+  decodeInteger,
+  decodeString32,
+  decodeByteStrings,
+} from '../protocol/response.js';
 import type { ClientConfig } from '../config/types.js';
-import type { CommandOptions, SetOptions, SetResult, VaylixClient } from './types.js';
+import type { CommandOptions, SetBytesResult, SetOptions, SetResult, VaylixClient } from './types.js';
 import type {
   ClusterInfoMap,
   HealthMap,
   InfoMap,
   MetricsMap,
   ReplicationInfoMap,
+  VaylixValue,
   VaylixTransaction,
 } from '../types/public.js';
 import { Connection } from '../net/connection.js';
@@ -38,24 +47,38 @@ export class ClientImpl implements VaylixClient {
   }
 
   public async get(key: string, options?: CommandOptions): Promise<string | null> {
+    const value = await this.getBytes(key, options);
+    return value?.toString('utf8') ?? null;
+  }
+
+  public async getBytes(key: string, options?: CommandOptions): Promise<Buffer | null> {
     const response = await this.connection.request({
       opcode: opcodes.Get,
       payload: encodeKey(key),
       metadata: toMetadata(options),
     });
-    return response.status === 'NOT_FOUND' ? null : decodeString32(response.payload);
+    return response.status === 'NOT_FOUND' ? null : decodeBytes32(response.payload);
   }
 
-  public async set(key: string, value: string, options?: SetOptions & CommandOptions): Promise<SetResult> {
+  public async set(key: string, value: VaylixValue, options?: SetOptions & CommandOptions): Promise<SetResult> {
+    const result = await this.setBytes(key, value, options);
+    return Buffer.isBuffer(result) ? result.toString('utf8') : result;
+  }
+
+  public async setBytes(
+    key: string,
+    value: VaylixValue,
+    options?: SetOptions & CommandOptions,
+  ): Promise<SetBytesResult> {
     const response = await this.connection.request({
       opcode: opcodes.Set,
       payload: encodeSet(key, value, options),
       metadata: toMetadata(options),
     });
     if (options?.returnPrevious) {
-      return response.status === 'NOT_FOUND' ? null : decodeString32(response.payload);
+      return response.status === 'NOT_FOUND' ? null : decodeBytes32(response.payload);
     }
-    if (options?.onlyIfMissing || options?.onlyIfExists) {
+    if (options?.onlyIfMissing || options?.onlyIfExists || options?.ifVersion !== undefined) {
       return decodeBoolean(response.payload);
     }
     return 'OK';
@@ -79,15 +102,26 @@ export class ClientImpl implements VaylixClient {
   }
 
   public async mget(keys: string[], options?: CommandOptions): Promise<Array<string | null>> {
+    return (await this.mgetBytes(keys, options)).map((value) => value?.toString('utf8') ?? null);
+  }
+
+  public async mgetBytes(keys: string[], options?: CommandOptions): Promise<Array<Buffer | null>> {
     const response = await this.connection.request({
       opcode: opcodes.MGet,
       payload: encodeKeys(keys),
       metadata: toMetadata(options),
     });
-    return decodeStrings(response.payload);
+    return decodeByteStrings(response.payload);
   }
 
-  public async mset(entries: Record<string, string>, options?: CommandOptions): Promise<'OK'> {
+  public async mset(entries: Record<string, VaylixValue>, options?: CommandOptions): Promise<'OK'> {
+    return this.msetBytes(entries, options);
+  }
+
+  public async msetBytes(
+    entries: Record<string, VaylixValue> | Iterable<readonly [string, VaylixValue]>,
+    options?: CommandOptions,
+  ): Promise<'OK'> {
     await this.connection.request({
       opcode: opcodes.MSet,
       payload: encodePairs(entries),

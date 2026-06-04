@@ -12,12 +12,12 @@ export interface DecodedExecScanResult {
 export type DecodedExecResult =
   | { kind: 'ok' }
   | { kind: 'not_found' }
-  | { kind: 'value'; value: string }
+  | { kind: 'value'; value: Buffer }
   | { kind: 'boolean'; value: boolean }
   | { kind: 'count'; value: number }
   | { kind: 'integer'; value: number }
-  | { kind: 'entries'; value: Array<[string, string]> }
-  | { kind: 'strings'; value: Array<string | null> }
+  | { kind: 'entries'; value: Array<[string, Buffer]> }
+  | { kind: 'strings'; value: Array<Buffer | null> }
   | { kind: 'scan'; value: DecodedExecScanResult };
 
 export interface DecodedResponse {
@@ -45,8 +45,12 @@ export function decodeResponseBody(payload: Buffer): DecodedResponse {
 }
 
 export function decodeString32(payload: Buffer): string {
+  return decodeBytes32(payload).toString('utf8');
+}
+
+export function decodeBytes32(payload: Buffer): Buffer {
   const reader = new BufferReader(payload);
-  const value = reader.readString32();
+  const value = reader.readBytes32();
   reader.ensureFullyRead();
   return value;
 }
@@ -75,26 +79,34 @@ export function decodeCount(payload: Buffer): number {
 }
 
 export function decodeEntries(payload: Buffer): Array<[string, string]> {
+  return decodeByteEntries(payload).map(([key, value]) => [key, value.toString('utf8')]);
+}
+
+export function decodeByteEntries(payload: Buffer): Array<[string, Buffer]> {
   const reader = new BufferReader(payload);
   const count = reader.readUInt32BE();
-  const entries: Array<[string, string]> = [];
+  const entries: Array<[string, Buffer]> = [];
   for (let index = 0; index < count; index += 1) {
-    entries.push([reader.readString16(), reader.readString32()]);
+    entries.push([reader.readString16(), reader.readBytes32()]);
   }
   reader.ensureFullyRead();
   return entries;
 }
 
 export function decodeStrings(payload: Buffer): Array<string | null> {
+  return decodeByteStrings(payload).map((value) => value?.toString('utf8') ?? null);
+}
+
+export function decodeByteStrings(payload: Buffer): Array<Buffer | null> {
   const reader = new BufferReader(payload);
   const count = reader.readUInt32BE();
-  const values: Array<string | null> = [];
+  const values: Array<Buffer | null> = [];
   for (let index = 0; index < count; index += 1) {
     const flag = reader.readUInt8();
     if (flag === 0) {
       values.push(null);
     } else if (flag === 1) {
-      values.push(reader.readString32());
+      values.push(reader.readBytes32());
     } else {
       throw new ProtocolError('invalid optional string flag');
     }
@@ -131,7 +143,7 @@ function decodeExecResult(reader: BufferReader): DecodedExecResult {
     case 0x01:
       return { kind: 'not_found' };
     case 0x02:
-      return { kind: 'value', value: reader.readString32() };
+      return { kind: 'value', value: reader.readBytes32() };
     case 0x03: {
       const value = reader.readUInt8();
       if (value !== 0 && value !== 1) {
@@ -145,15 +157,15 @@ function decodeExecResult(reader: BufferReader): DecodedExecResult {
       return { kind: 'integer', value: Number(reader.readBigInt64BE()) };
     case 0x06: {
       const count = reader.readUInt32BE();
-      const entries: Array<[string, string]> = [];
+      const entries: Array<[string, Buffer]> = [];
       for (let index = 0; index < count; index += 1) {
-        entries.push([reader.readString16(), reader.readString32()]);
+        entries.push([reader.readString16(), reader.readBytes32()]);
       }
       return { kind: 'entries', value: entries };
     }
     case 0x07: {
       const count = reader.readUInt32BE();
-      const values: Array<string | null> = [];
+      const values: Array<Buffer | null> = [];
       for (let index = 0; index < count; index += 1) {
         const flag = reader.readUInt8();
         if (flag === 0) {
@@ -163,7 +175,7 @@ function decodeExecResult(reader: BufferReader): DecodedExecResult {
         if (flag !== 1) {
           throw new ProtocolError('invalid EXEC optional string flag');
         }
-        values.push(reader.readString32());
+        values.push(reader.readBytes32());
       }
       return { kind: 'strings', value: values };
     }

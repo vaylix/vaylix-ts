@@ -78,6 +78,12 @@ export interface ClientConfig {
    */
   compression?: CompressionMode;
   /**
+   * Minimum request body size before outbound zstd compression is attempted.
+   *
+   * Small VTP frames are normally faster uncompressed. Defaults to 4 KiB.
+   */
+  compressionThresholdBytes?: number;
+  /**
    * Socket connection timeout in milliseconds.
    */
   connectTimeoutMs?: number;
@@ -113,6 +119,7 @@ export interface ResolvedClientConfig {
   password?: string;
   tls: TlsConfig;
   compression: CompressionMode;
+  compressionThresholdBytes: number;
   connectTimeoutMs: number;
   requestTimeoutMs: number;
   maxFrameSize: number;

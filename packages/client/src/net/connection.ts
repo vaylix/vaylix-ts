@@ -44,7 +44,7 @@ export class Connection {
     this.config = resolveClientConfig(config);
     this.frameOptions = {
       compression: this.config.compression,
-      compressionThresholdBytes: 0,
+      compressionThresholdBytes: this.config.compressionThresholdBytes,
       maxFrameLen: this.config.maxFrameSize,
       maxDecompressedFrameLen: this.config.maxFrameSize,
     };
@@ -135,7 +135,7 @@ export class Connection {
     }
     this.frameOptions = {
       compression: serverHello.compression,
-      compressionThresholdBytes: 0,
+      compressionThresholdBytes: this.config.compressionThresholdBytes,
       maxFrameLen: serverHello.maxFrameLen,
       maxDecompressedFrameLen: serverHello.maxFrameLen,
     };

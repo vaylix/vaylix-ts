@@ -14,7 +14,8 @@ const DEFAULT_CONNECT_TIMEOUT_MS = 5_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_FRAME_SIZE = 8 * 1024 * 1024;
 const DEFAULT_CLIENT_NAME = '@vaylix/client';
-const DEFAULT_CLIENT_VERSION = '0.2.0';
+const DEFAULT_CLIENT_VERSION = '0.4.0';
+const DEFAULT_COMPRESSION_THRESHOLD_BYTES = 4 * 1024;
 
 export function resolveClientConfig(
   config: ClientConfig = {},
@@ -27,6 +28,7 @@ export function resolveClientConfig(
     port: config.port ?? fromUrl?.port ?? DEFAULT_PORT,
     tls,
     compression: config.compression ?? fromUrl?.compression ?? 'zstd',
+    compressionThresholdBytes: config.compressionThresholdBytes ?? DEFAULT_COMPRESSION_THRESHOLD_BYTES,
     connectTimeoutMs: config.connectTimeoutMs ?? DEFAULT_CONNECT_TIMEOUT_MS,
     requestTimeoutMs: config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
     maxFrameSize: config.maxFrameSize ?? DEFAULT_MAX_FRAME_SIZE,

@@ -1,6 +1,7 @@
 import type { PoolClientConfig, VaylixPool } from './types.js';
 import { createClientImpl } from '../client/client.js';
 import type { VaylixClient } from '../client/types.js';
+import type { VaylixValue } from '../types/public.js';
 import { ProtocolError } from '../errors/index.js';
 
 export class PoolImpl implements VaylixPool {
@@ -38,15 +39,19 @@ export class PoolImpl implements VaylixPool {
 
   public async ping(...args: Parameters<VaylixClient['ping']>): Promise<'PONG'> { return (await this.acquire()).ping(...args); }
   public async get(...args: Parameters<VaylixClient['get']>): Promise<string | null> { return (await this.acquire()).get(...args); }
+  public async getBytes(...args: Parameters<VaylixClient['getBytes']>): Promise<Buffer | null> { return (await this.acquire()).getBytes(...args); }
   public async set(
     key: string,
-    value: string,
+    value: VaylixValue,
     options?: Parameters<VaylixClient['set']>[2],
   ) { return (await this.acquire()).set(key, value, options); }
+  public async setBytes(...args: Parameters<VaylixClient['setBytes']>) { return (await this.acquire()).setBytes(...args); }
   public async del(...keys: string[]): Promise<number> { return (await this.acquire()).del(...keys); }
   public async exists(...args: Parameters<VaylixClient['exists']>): Promise<boolean> { return (await this.acquire()).exists(...args); }
   public async mget(...args: Parameters<VaylixClient['mget']>): Promise<Array<string | null>> { return (await this.acquire()).mget(...args); }
+  public async mgetBytes(...args: Parameters<VaylixClient['mgetBytes']>): Promise<Array<Buffer | null>> { return (await this.acquire()).mgetBytes(...args); }
   public async mset(...args: Parameters<VaylixClient['mset']>): Promise<'OK'> { return (await this.acquire()).mset(...args); }
+  public async msetBytes(...args: Parameters<VaylixClient['msetBytes']>): Promise<'OK'> { return (await this.acquire()).msetBytes(...args); }
   public async expire(...args: Parameters<VaylixClient['expire']>): Promise<boolean> { return (await this.acquire()).expire(...args); }
   public async ttl(...args: Parameters<VaylixClient['ttl']>): Promise<number> { return (await this.acquire()).ttl(...args); }
   public async persist(...args: Parameters<VaylixClient['persist']>): Promise<boolean> { return (await this.acquire()).persist(...args); }

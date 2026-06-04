@@ -18,6 +18,7 @@ packages/*/.tsup
 apps/*/dist
 apps/*/dist-server
 apps/*/node_modules
+.turbo
 *.tsbuildinfo
 *.tgz
 packages/client/README.md

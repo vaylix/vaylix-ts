@@ -1,3 +1,21 @@
+import type { Buffer } from 'node:buffer';
+
+/**
+ * Value accepted by write APIs.
+ *
+ * Strings are encoded as UTF-8 for backward ergonomics. `Uint8Array` and
+ * `Buffer` inputs are sent as opaque bytes for Vaylix v0.8.0 binary-safe
+ * values.
+ */
+export type VaylixValue = string | Uint8Array;
+
+/**
+ * Unsigned 64-bit value version used by `SET ... IF VERSION`.
+ *
+ * Use `bigint` when versions may exceed JavaScript's safe integer range.
+ */
+export type VaylixVersion = number | bigint;
+
 /**
  * Flat string map returned by `client.info()`.
  *
@@ -66,6 +84,13 @@ export interface TransactionCommandResult {
    */
   value?: string | null;
   /**
+   * Exact byte value returned by commands such as `GET`, or `null` for missing values.
+   *
+   * This is populated alongside `value` so existing string-oriented consumers do
+   * not break while binary-safe consumers can avoid UTF-8 conversion loss.
+   */
+  valueBytes?: Buffer | null;
+  /**
    * Integer result returned by commands such as `TTL` or `DEL`.
    */
   integer?: number;
@@ -78,9 +103,17 @@ export interface TransactionCommandResult {
    */
   entries?: Array<[string, string]>;
   /**
+   * Exact byte entries returned by inspection commands.
+   */
+  entriesBytes?: Array<[string, Buffer]>;
+  /**
    * Multi-value result returned by commands such as `MGET`.
    */
   strings?: Array<string | null>;
+  /**
+   * Exact byte multi-value result returned by commands such as `MGET`.
+   */
+  stringsBytes?: Array<Buffer | null>;
   /**
    * Structured server error when the queued command failed.
    */
@@ -101,9 +134,19 @@ export interface VaylixTransaction {
   /**
    * Queue a `SET` inside the active transaction.
    *
-   * Transactional `SET` currently supports second-based TTL and TTL retention.
+   * Transactional `SET` supports TTL, TTL retention, and v0.8.0 version-based
+   * CAS through `ifVersion`.
    */
-  set(key: string, value: string, options?: { ttlSeconds?: number; keepTtl?: boolean }): this;
+  set(
+    key: string,
+    value: VaylixValue,
+    options?: {
+      ttlSeconds?: number;
+      ttlMilliseconds?: number;
+      keepTtl?: boolean;
+      ifVersion?: VaylixVersion;
+    },
+  ): this;
   /**
    * Queue a `DEL` inside the active transaction.
    */

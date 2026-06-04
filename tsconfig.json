@@ -2,6 +2,8 @@
   "files": [],
   "references": [
     { "path": "./packages/client" },
-    { "path": "./apps/playground" }
+    { "path": "./apps/playground-shared" },
+    { "path": "./apps/playground-api" },
+    { "path": "./apps/playground-web" }
   ]
 }

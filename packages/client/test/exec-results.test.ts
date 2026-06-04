@@ -33,12 +33,12 @@ test('decodeExecResults decodes structured Vaylix EXEC payloads', () => {
 
   assert.deepEqual(decodeExecResults(writer.toBuffer()), [
     { kind: 'ok' },
-    { kind: 'value', value: 'alpha' },
+    { kind: 'value', value: Buffer.from('alpha') },
     { kind: 'boolean', value: true },
     { kind: 'count', value: 7 },
     { kind: 'integer', value: -2 },
-    { kind: 'entries', value: [['name', 'alice']] },
-    { kind: 'strings', value: ['one', null] },
+    { kind: 'entries', value: [['name', Buffer.from('alice')]] },
+    { kind: 'strings', value: [Buffer.from('one'), null] },
     { kind: 'scan', value: { nextCursor: 22, keys: ['k1', 'k2'] } },
   ]);
 });

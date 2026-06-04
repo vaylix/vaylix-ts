@@ -1,10 +1,13 @@
+import type { Buffer } from 'node:buffer';
 import type {
   ClusterInfoMap,
   HealthMap,
   InfoMap,
   MetricsMap,
   ReplicationInfoMap,
+  VaylixValue,
   VaylixTransaction,
+  VaylixVersion,
 } from '../types/public.js';
 
 /**
@@ -46,6 +49,14 @@ export interface SetOptions {
    */
   onlyIfExists?: boolean;
   /**
+   * Write only when the current stored value version exactly matches.
+   *
+   * Vaylix v0.8.0 rejects `ifVersion` combined with `onlyIfMissing` or
+   * `onlyIfExists`. Use `bigint` for values outside JavaScript's safe integer
+   * range.
+   */
+  ifVersion?: VaylixVersion;
+  /**
    * Return the previous value instead of a plain `"OK"` result.
    */
   returnPrevious?: boolean;
@@ -59,6 +70,13 @@ export interface SetOptions {
  * `null` when the key was absent.
  */
 export type SetResult = 'OK' | boolean | string | null;
+
+/**
+ * Result type for byte-preserving `SET`.
+ *
+ * `returnPrevious` returns the exact previous bytes as a `Buffer`.
+ */
+export type SetBytesResult = 'OK' | boolean | Buffer | null;
 
 /**
  * Public client contract for talking to a Vaylix server.
@@ -77,13 +95,26 @@ export interface VaylixClient {
    */
   ping(options?: CommandOptions): Promise<'PONG'>;
   /**
-   * Read a string value by key.
+   * Read a UTF-8 string value by key.
+   *
+   * Use `getBytes()` when values may contain arbitrary binary data.
    */
   get(key: string, options?: CommandOptions): Promise<string | null>;
   /**
-   * Write a string value with optional conditional and TTL modifiers.
+   * Read an exact byte value by key.
    */
-  set(key: string, value: string, options?: SetOptions & CommandOptions): Promise<SetResult>;
+  getBytes(key: string, options?: CommandOptions): Promise<Buffer | null>;
+  /**
+   * Write a value with optional conditional, CAS, and TTL modifiers.
+   *
+   * String values are encoded as UTF-8. Binary consumers can pass `Buffer` or
+   * `Uint8Array`; use `setBytes()` when `returnPrevious` must preserve bytes.
+   */
+  set(key: string, value: VaylixValue, options?: SetOptions & CommandOptions): Promise<SetResult>;
+  /**
+   * Write a value and preserve byte payloads in `returnPrevious` results.
+   */
+  setBytes(key: string, value: VaylixValue, options?: SetOptions & CommandOptions): Promise<SetBytesResult>;
   /**
    * Delete one or more keys and return the number of removed keys.
    */
@@ -93,13 +124,29 @@ export interface VaylixClient {
    */
   exists(key: string, options?: CommandOptions): Promise<boolean>;
   /**
-   * Fetch multiple keys in a single round trip.
+   * Fetch multiple keys in a single round trip and decode values as UTF-8.
+   *
+   * Use `mgetBytes()` when values may contain arbitrary binary data.
    */
   mget(keys: string[], options?: CommandOptions): Promise<Array<string | null>>;
   /**
+   * Fetch multiple keys in a single round trip while preserving exact bytes.
+   */
+  mgetBytes(keys: string[], options?: CommandOptions): Promise<Array<Buffer | null>>;
+  /**
    * Write multiple key/value pairs in a single round trip.
    */
-  mset(entries: Record<string, string>, options?: CommandOptions): Promise<'OK'>;
+  mset(entries: Record<string, VaylixValue>, options?: CommandOptions): Promise<'OK'>;
+  /**
+   * Write multiple binary-safe key/value pairs in a single round trip.
+   *
+   * Accepts records, arrays, and maps. This is equivalent to `mset()` but makes
+   * byte-oriented call sites explicit.
+   */
+  msetBytes(
+    entries: Record<string, VaylixValue> | Iterable<readonly [string, VaylixValue]>,
+    options?: CommandOptions,
+  ): Promise<'OK'>;
   /**
    * Attach or replace a TTL in whole seconds.
    */
