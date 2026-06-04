@@ -6,7 +6,7 @@ import { BufferWriter } from '../src/internal/buffer.js';
 import { encodeKeys, encodeOptionalString, encodePairs, encodeSet, encodeStringPair } from '../src/commands/encoding.js';
 import { opcodes } from '../src/protocol/opcodes.js';
 import { encodeRequestBody } from '../src/protocol/request.js';
-import { decodeErrorPayload, decodeResponseBody } from '../src/protocol/response.js';
+import { decodeByteStrings, decodeBytes32, decodeErrorPayload, decodeResponseBody } from '../src/protocol/response.js';
 import { responseStatus } from '../src/protocol/status.js';
 
 test('encodeRequestBody preserves metadata flags and request id', () => {
@@ -95,6 +95,22 @@ test('encodeKeys and encodePairs use u16 collection counts', () => {
   assert.equal(pairs.readUInt16BE(0), 2);
 });
 
+test('encodePairs preserves binary values', () => {
+  const encoded = encodePairs(new Map([['bin', Buffer.from([0x00, 0xff, 0x61])]]));
+  let offset = 0;
+  assert.equal(encoded.readUInt16BE(offset), 1);
+  offset += 2;
+  assert.equal(encoded.readUInt16BE(offset), 3);
+  offset += 2;
+  assert.equal(encoded.subarray(offset, offset + 3).toString('utf8'), 'bin');
+  offset += 3;
+  assert.equal(encoded.readUInt32BE(offset), 3);
+  offset += 4;
+  assert.deepEqual(encoded.subarray(offset, offset + 3), Buffer.from([0x00, 0xff, 0x61]));
+  offset += 3;
+  assert.equal(offset, encoded.length);
+});
+
 test('encodeStringPair uses two u16 strings for cluster membership commands', () => {
   const encoded = encodeStringPair('node-1', '127.0.0.1:9173');
   let offset = 0;
@@ -147,5 +163,60 @@ test('encodeSet matches the Rust transport wire layout', () => {
   offset += 1;
   assert.equal(encoded.readUInt8(offset), 1);
   offset += 1;
+  assert.equal(encoded.readUInt8(offset), 0);
+  offset += 1;
   assert.equal(offset, encoded.length);
+});
+
+test('encodeSet preserves binary values and appends CAS version metadata', () => {
+  const encoded = encodeSet('alpha', Buffer.from([0x00, 0xff, 0x62]), {
+    ttlMilliseconds: 5000,
+    returnPrevious: false,
+    ifVersion: 42n,
+  });
+
+  let offset = 0;
+  assert.equal(encoded.readUInt16BE(offset), 5);
+  offset += 2;
+  assert.equal(encoded.subarray(offset, offset + 5).toString('utf8'), 'alpha');
+  offset += 5;
+  assert.equal(encoded.readUInt32BE(offset), 3);
+  offset += 4;
+  assert.deepEqual(encoded.subarray(offset, offset + 3), Buffer.from([0x00, 0xff, 0x62]));
+  offset += 3;
+  assert.equal(encoded.readUInt8(offset), 0);
+  offset += 1;
+  assert.equal(encoded.readUInt8(offset), 2);
+  offset += 1;
+  assert.equal(encoded.readBigUInt64BE(offset), 5000n);
+  offset += 8;
+  assert.equal(encoded.readUInt8(offset), 0);
+  offset += 1;
+  assert.equal(encoded.readUInt8(offset), 0);
+  offset += 1;
+  assert.equal(encoded.readUInt8(offset), 1);
+  offset += 1;
+  assert.equal(encoded.readBigUInt64BE(offset), 42n);
+  offset += 8;
+  assert.equal(offset, encoded.length);
+});
+
+test('encodeSet rejects existence conditions combined with CAS', () => {
+  assert.throws(
+    () => encodeSet('alpha', 'bravo', { onlyIfExists: true, ifVersion: 1 }),
+    /IF VERSION cannot be combined/,
+  );
+});
+
+test('byte response decoders preserve opaque payloads', () => {
+  const value = new BufferWriter();
+  value.writeBytes32(Buffer.from([0x00, 0xff, 0x62]));
+  assert.deepEqual(decodeBytes32(value.toBuffer()), Buffer.from([0x00, 0xff, 0x62]));
+
+  const values = new BufferWriter();
+  values.writeUInt32BE(2);
+  values.writeUInt8(1);
+  values.writeBytes32(Buffer.from([0x00, 0xff]));
+  values.writeUInt8(0);
+  assert.deepEqual(decodeByteStrings(values.toBuffer()), [Buffer.from([0x00, 0xff]), null]);
 });

@@ -3,7 +3,9 @@ export { createPool } from './pool/factory.js';
 
 export type {
   CommandOptions,
+  SetBytesResult,
   SetOptions,
+  SetResult,
   VaylixClient,
 } from './client/types.js';
 export type {
@@ -21,6 +23,8 @@ export type {
   MetricsMap,
   ReplicationInfoMap,
   TransactionCommandResult,
+  VaylixValue,
+  VaylixVersion,
   VaylixTransaction,
 } from './types/public.js';
 

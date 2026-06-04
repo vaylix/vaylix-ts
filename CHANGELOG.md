@@ -4,6 +4,23 @@ All notable changes to this repository will be documented in this file.
 
 The format is based on Keep a Changelog and the versioning policy follows Semantic Versioning.
 
+## [0.4.0] - 2026-06-05
+
+### Added
+
+- added Vaylix `0.8.0` value compatibility with binary-safe `getBytes()`, `setBytes()`, `mgetBytes()`, and `msetBytes()` APIs
+- added `Uint8Array` / `Buffer` write support while preserving existing string-oriented ergonomics
+- added version-based CAS support through `set(..., { ifVersion })`
+- added byte-preserving transaction result fields for value-returning `EXEC` results
+- added public `VaylixValue`, `VaylixVersion`, `SetResult`, and `SetBytesResult` type exports
+
+### Changed
+
+- bumped the workspace, client package, and playground package versions to `0.4.0`
+- changed value payload encoding and decoding to use Vaylix v0.8.0 byte fields instead of assuming UTF-8 strings
+- raised the outbound zstd compression threshold for client requests so small VTP frames are not compressed by default
+- updated the playground `SET` operation to expose the `ifVersion` CAS option
+
 ## [0.3.0] - 2026-05-31
 
 ### Added

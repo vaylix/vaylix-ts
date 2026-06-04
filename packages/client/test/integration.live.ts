@@ -51,6 +51,44 @@ test('live integration against configured Vaylix server', async (t) => {
       assert.deepEqual(await client.mget([msetA, msetB, `${prefix}:unset`]), ['1', '2', null]);
     });
 
+    await t.test('binary values and CAS', async () => {
+      if (serverVersion === 'unknown') {
+        serverVersion = (await client.info())['server.version'] ?? 'unknown';
+      }
+      if (!supports080(serverVersion)) {
+        return;
+      }
+
+      const binaryKey = `${prefix}:binary`;
+      const binaryValue = Buffer.from([0x00, 0xff, 0x61, 0x62]);
+      assert.equal(await client.setBytes(binaryKey, binaryValue), 'OK');
+      assert.deepEqual(await client.getBytes(binaryKey), binaryValue);
+      assert.deepEqual(
+        await client.setBytes(binaryKey, Buffer.from([0x01, 0x02]), { returnPrevious: true }),
+        binaryValue,
+      );
+
+      const msetBinaryA = `${prefix}:bin-a`;
+      const msetBinaryB = `${prefix}:bin-b`;
+      assert.equal(
+        await client.msetBytes(new Map([
+          [msetBinaryA, Buffer.from([0x00])],
+          [msetBinaryB, Buffer.from([0xff])],
+        ])),
+        'OK',
+      );
+      assert.deepEqual(await client.mgetBytes([msetBinaryA, msetBinaryB]), [
+        Buffer.from([0x00]),
+        Buffer.from([0xff]),
+      ]);
+
+      const casKey = `${prefix}:cas`;
+      assert.equal(await client.set(casKey, 'one'), 'OK');
+      assert.equal(await client.set(casKey, 'two', { ifVersion: 1 }), true);
+      assert.equal(await client.set(casKey, 'three', { ifVersion: 1 }), false);
+      assert.equal(await client.get(casKey), 'two');
+    });
+
     await t.test('exists and del', async () => {
       assert.equal(await client.exists(key), true);
       assert.equal(await client.del(`${prefix}:unset`, key), 1);
@@ -113,7 +151,7 @@ test('live integration against configured Vaylix server', async (t) => {
       const result = await tx.exec();
       assert.deepEqual(result, [
         { status: 'OK' },
-        { status: 'OK', value: 'alpha' },
+        { status: 'OK', value: 'alpha', valueBytes: Buffer.from('alpha') },
         { status: 'OK', boolean: true },
       ]);
       assert.equal(await client.get(txKey), 'alpha');
@@ -258,4 +296,15 @@ function supports050(version: string): boolean {
   const major = Number(majorText);
   const minor = Number(minorText);
   return major > 0 || minor >= 5;
+}
+
+function supports080(version: string): boolean {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  if (!match) {
+    return false;
+  }
+  const [, majorText, minorText] = match;
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  return major > 0 || minor >= 8;
 }

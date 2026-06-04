@@ -1,7 +1,7 @@
 {
   "name": "vaylix-typescript-workspace",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "scripts": {
     "dev": "pnpm --filter @vaylix/playground-shared build && pnpm --filter @vaylix/client build && turbo run dev --filter=@vaylix/client --filter=@vaylix/playground-api --filter=@vaylix/playground-web",
     "build": "turbo run build",

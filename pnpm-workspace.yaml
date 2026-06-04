@@ -14,4 +14,4 @@ allowBuilds:
   '@mongodb-js/zstd': true
   esbuild: true
 minimumReleaseAgeExclude:
-  - '@vaylix/client@0.3.0'
+  - '@vaylix/client@0.4.0'

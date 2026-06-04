@@ -30,6 +30,9 @@ const handlers: OperationHandlers = {
         ...(payload.onlyIfExists !== undefined
           ? { onlyIfExists: booleanFlag(payload.onlyIfExists) }
           : {}),
+        ...(payload.ifVersion !== undefined
+          ? { ifVersion: asNumber(payload.ifVersion, "ifVersion") }
+          : {}),
         ...(payload.returnPrevious !== undefined
           ? { returnPrevious: booleanFlag(payload.returnPrevious) }
           : {}),

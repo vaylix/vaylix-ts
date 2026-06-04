@@ -76,6 +76,13 @@ export const playgroundOperations: PlaygroundOperation[] = [
         description: 'Write only when the key already exists.',
       },
       {
+        key: 'ifVersion',
+        label: 'If Version',
+        kind: 'number',
+        description: 'Write only when the current value version matches.',
+        min: 0,
+      },
+      {
         key: 'returnPrevious',
         label: 'Return Previous',
         kind: 'switch',

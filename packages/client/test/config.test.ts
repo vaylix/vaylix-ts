@@ -12,6 +12,7 @@ test('resolveClientConfig reads DATABASE_URL when no explicit url is provided', 
     assert.equal(resolved.username, 'alice');
     assert.equal(resolved.password, 'secret');
     assert.equal(resolved.compression, 'none');
+    assert.equal(resolved.compressionThresholdBytes, 4096);
     assert.equal(resolved.tls.enabled, true);
     assert.equal(resolved.tls.servername, 'db.internal');
   } finally {
@@ -28,6 +29,7 @@ test('explicit config overrides DATABASE_URL fields', () => {
       username: 'root',
       password: 'override',
       compression: 'zstd',
+      compressionThresholdBytes: 8192,
       tls: false,
     });
     assert.equal(resolved.host, '127.0.0.1');
@@ -35,6 +37,7 @@ test('explicit config overrides DATABASE_URL fields', () => {
     assert.equal(resolved.username, 'root');
     assert.equal(resolved.password, 'override');
     assert.equal(resolved.compression, 'zstd');
+    assert.equal(resolved.compressionThresholdBytes, 8192);
     assert.equal(resolved.tls.enabled, false);
   } finally {
     delete process.env.DATABASE_URL;

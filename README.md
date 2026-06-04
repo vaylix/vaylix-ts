@@ -105,16 +105,41 @@ await client.get('user:1'); // "alice"
 await client.get('user:missing'); // null
 ```
 
+### Binary values
+
+Vaylix `0.8.0` stores values as opaque bytes. Existing string APIs still encode
+and decode UTF-8 for convenience. Use the byte APIs when values may contain
+null bytes, non-UTF-8 payloads, or already-encoded application data.
+
+```ts
+const bytes = Buffer.from([0x00, 0xff, 0x61]);
+
+await client.setBytes('blob:1', bytes); // "OK"
+await client.getBytes('blob:1'); // Buffer [00 ff 61]
+
+await client.msetBytes(new Map([
+  ['blob:a', Buffer.from([0x01])],
+  ['blob:b', Buffer.from([0x02])],
+]));
+
+await client.mgetBytes(['blob:a', 'blob:b']);
+```
+
 ### `SET` options
 
 ```ts
 await client.set('key', 'value', { onlyIfMissing: true }); // boolean
 await client.set('key', 'value', { onlyIfExists: true }); // boolean
+await client.set('key', 'next', { ifVersion: 7n }); // boolean
 await client.set('key', 'next', { returnPrevious: true }); // previous value or null
 await client.set('key', 'value', { ttlSeconds: 60 }); // "OK"
 await client.set('key', 'value', { ttlMilliseconds: 5000 }); // "OK"
 await client.set('key', 'value', { keepTtl: true }); // "OK"
 ```
+
+`ifVersion` maps to Vaylix `SET key value IF VERSION <version>`. It cannot be
+combined with `onlyIfMissing` or `onlyIfExists`. Pass `bigint` when the version
+may exceed JavaScript's safe integer range.
 
 ### Batch operations
 
@@ -174,7 +199,7 @@ const cluster = await client.showCluster();
 const replication = await client.showReplication();
 ```
 
-Vaylix v0.5.0 cluster membership commands:
+Cluster membership commands:
 
 ```ts
 await client.clusterJoin('node-2', 'node-2.internal:9173');
@@ -213,7 +238,7 @@ Example result:
 ```ts
 [
   { status: 'OK' },
-  { status: 'OK', value: 'alpha' },
+  { status: 'OK', value: 'alpha', valueBytes: Buffer.from('alpha') },
   { status: 'OK', boolean: true },
 ];
 ```

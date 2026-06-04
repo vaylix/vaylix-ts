@@ -2,7 +2,7 @@ import { encodeKey, encodeKeyU64, encodeKeys, encodeSet } from '../commands/enco
 import { ProtocolError } from '../errors/index.js';
 import { opcodes } from '../protocol/opcodes.js';
 import { decodeExecResults, type DecodedExecResult } from '../protocol/response.js';
-import type { TransactionCommandResult, VaylixTransaction } from '../types/public.js';
+import type { TransactionCommandResult, VaylixTransaction, VaylixValue, VaylixVersion } from '../types/public.js';
 import { Connection } from '../net/connection.js';
 
 type QueuedCommand =
@@ -37,7 +37,11 @@ export class Transaction implements VaylixTransaction {
     return this;
   }
 
-  public set(key: string, value: string, options?: { ttlSeconds?: number; keepTtl?: boolean }): this {
+  public set(
+    key: string,
+    value: VaylixValue,
+    options?: { ttlSeconds?: number; ttlMilliseconds?: number; keepTtl?: boolean; ifVersion?: VaylixVersion },
+  ): this {
     this.queued.push({
       kind: 'set',
       opcode: opcodes.Set,
@@ -128,12 +132,19 @@ function decodeExecResult(command: QueuedCommand, result: DecodedExecResult): Tr
         return { status: 'NOT_FOUND', value: null };
       }
       if (result.kind === 'value') {
-        return { status: 'OK', value: result.value };
+        return {
+          status: 'OK',
+          value: result.value.toString('utf8'),
+          valueBytes: result.value,
+        };
       }
       break;
     case 'set':
       if (result.kind === 'ok') {
         return { status: 'OK' };
+      }
+      if (result.kind === 'boolean') {
+        return { status: 'OK', boolean: result.value };
       }
       break;
     case 'del':
